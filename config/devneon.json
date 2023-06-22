@@ -1,0 +1,18 @@
+{
+    "network": "neon-devnet",
+    "factoryv2_address": "0x6a1747Ad0f312FB720F0673E8ebDab8a87218972",
+    "start_block": "224058490",
+    "weth9_address": "0xf1041596da0499c3438e3B1Eb7b95354C6Aed1f5",
+    "dai_address": "0xC989FfF9d02C459117A2EaBb8dA3f03DFd9045DE",
+    "usdc_address": "0x512E48836Cd42F3eB6f50CEd9ffD81E0a7F15103",
+    "usdt_address": "0x6eEf939FC6e2B3F440dCbB72Ea81Cd63B5a519A5",
+    "wbtc_address": "0x2B86AEf728405F8F6597e5896a1844E36ddE77aD",
+    "weth_address": "0x46E986B5b0f87F1026ff52Ce20340467199F891D",
+    "wsol_address": "0xc7Fc9b46e479c5Cb42f6C458D1881e55E6B7986c",
+    "usdc_weth9_pair_address": "",
+    "usdc_weth9_pair_create_block": "",
+    "dai_weth9_pair_address": "",
+    "dai_weth9_pair_create_block": "",
+    "usdt_weth9_pair_address": "",
+    "usdt_weth9_pair_create_block": ""
+}

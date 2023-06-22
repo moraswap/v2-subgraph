@@ -1,0 +1,36 @@
+{
+  "name": "moraswap-v2-subgraph",
+  "version": "1.0.0",
+  "repository": "https://github.com/moraswap/v2-subgraph",
+  "license": "GPL-3.0-or-later",
+  "scripts": {
+    "devneon:prepare-constants": "mustache config/devneon.json src/constants/index.template.ts > src/constants/index.ts",
+    "devneon:prepare": "mustache config/devneon.json subgraph.template.yaml > subgraph.devneon.yaml",
+    "devneon:codegen": "graph codegen subgraph.devneon.yaml --output-dir src/types/",
+    "devneon:build": "graph build subgraph.devneon.yaml",
+    "devneon:deploy": "graph deploy --studio moraswap-v2-devneon subgraph.devneon.yaml",
+    "devneon:deploy-staging": "graph deploy --studio moraswap-v2-devneon subgraph.devneon.yaml --ipfs https://api.staging.thegraph.com/ipfs/ --node https://api.staging.thegraph.com/deploy/",
+    "neon:prepare-constants": "mustache config/neon.json src/constants/index.template.ts > src/constants/index.ts",
+    "neon:prepare": "mustache config/neon.json subgraph.template.yaml > subgraph.neon.yaml",
+    "neon:codegen": "graph codegen subgraph.neon.yaml --output-dir src/types/",
+    "neon:build": "graph build subgraph.neon.yaml",
+    "neon:deploy": "graph deploy --studio moraswap-v2-neon subgraph.neon.yaml",
+    "neon:deploy-staging": "graph deploy --studio moraswap-v2-neon subgraph.neon.yaml --ipfs https://api.staging.thegraph.com/ipfs/ --node https://api.staging.thegraph.com/deploy/",
+    "create-local": "graph create moraswap/moraswap-v2 --node http://127.0.0.1:8020",
+    "deploy-local": "graph deploy moraswap/moraswap-v2 --debug --ipfs http://localhost:5001 --node http://127.0.0.1:8020",
+    "watch-local": "graph deploy moraswap/moraswap-v2 --watch --debug --node http://127.0.0.1:8020/ --ipfs http://localhost:5001"
+  },
+  "devDependencies": {
+    "@graphprotocol/graph-cli": "^0.16.0",
+    "@graphprotocol/graph-ts": "^0.16.0",
+    "@typescript-eslint/eslint-plugin": "^2.0.0",
+    "@typescript-eslint/parser": "^2.0.0",
+    "eslint": "^6.2.2",
+    "eslint-config-prettier": "^6.1.0",
+    "prettier": "^1.18.2",
+    "typescript": "^3.5.2"
+  },
+  "dependencies": {
+    "mustache": "^4.2.0"
+  }
+}
