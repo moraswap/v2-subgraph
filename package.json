@@ -12,7 +12,7 @@
     "devneon:deploy-staging": "graph deploy --studio moraswap-v2-devneon subgraph.devneon.yaml --ipfs https://api.staging.thegraph.com/ipfs/ --node https://api.staging.thegraph.com/deploy/",
     "devneon:create-local": "graph create moraswap/moraswap-v2-devneon --node http://127.0.0.1:8020",
     "devneon:deploy-local": "graph deploy moraswap/moraswap-v2-devneon --debug --ipfs http://localhost:5001 --node http://127.0.0.1:8020 subgraph.devneon.yaml",
-    "devneon:watch-local": "graph deploy moraswap/moraswap-v2-devneon --watch --debug --node http://127.0.0.1:8020/ --ipfs http://localhost:5001",
+    "devneon:watch-local": "graph deploy moraswap/moraswap-v2-devneon --watch --debug --node http://127.0.0.1:8020/ --ipfs http://localhost:5001 subgraph.devneon.yaml",
     "neon:prepare-constants": "mustache config/neon.json src/constants/index.template.ts > src/constants/index.ts",
     "neon:prepare": "mustache config/neon.json subgraph.template.yaml > subgraph.neon.yaml",
     "neon:codegen": "graph codegen subgraph.neon.yaml --output-dir src/types/",
@@ -21,7 +21,7 @@
     "neon:deploy-staging": "graph deploy --studio moraswap-v2-neon subgraph.neon.yaml --ipfs https://api.staging.thegraph.com/ipfs/ --node https://api.staging.thegraph.com/deploy/",
     "neon:create-local": "graph create moraswap/moraswap-v2-neon --node http://127.0.0.1:8020",
     "neon:deploy-local": "graph deploy moraswap/moraswap-v2-neon --debug --ipfs http://localhost:5001 --node http://127.0.0.1:8020 subgraph.neon.yaml",
-    "neon:watch-local": "graph deploy moraswap/moraswap-v2-neon --watch --debug --node http://127.0.0.1:8020/ --ipfs http://localhost:5001"
+    "neon:watch-local": "graph deploy moraswap/moraswap-v2-neon --watch --debug --node http://127.0.0.1:8020/ --ipfs http://localhost:5001 subgraph.neon.yaml"
   },
   "devDependencies": {
     "@graphprotocol/graph-cli": "^0.16.0",
