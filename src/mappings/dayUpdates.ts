@@ -15,14 +15,14 @@ export function updateMoraswapDayData(event: EthereumEvent): MoraswapDayData {
     moraswapDayData = new MoraswapDayData(dayID.toString())
     moraswapDayData.date = dayStartTimestamp
     moraswapDayData.dailyVolumeUSD = ZERO_BD
-    moraswapDayData.dailyVolumeETH = ZERO_BD
+    moraswapDayData.dailyVolumeSOL = ZERO_BD
     moraswapDayData.totalVolumeUSD = ZERO_BD
-    moraswapDayData.totalVolumeETH = ZERO_BD
+    moraswapDayData.totalVolumeSOL = ZERO_BD
     moraswapDayData.dailyVolumeUntracked = ZERO_BD
   }
 
   moraswapDayData.totalLiquidityUSD = moraswap.totalLiquidityUSD
-  moraswapDayData.totalLiquidityETH = moraswap.totalLiquidityETH
+  moraswapDayData.totalLiquiditySOL = moraswap.totalLiquiditySOL
   moraswapDayData.txCount = moraswap.txCount
   moraswapDayData.save()
 
@@ -101,22 +101,23 @@ export function updateTokenDayData(token: Token, event: EthereumEvent): TokenDay
     .concat('-')
     .concat(BigInt.fromI32(dayID).toString())
 
+  // let derivedSOL = token.derivedSOL || ZERO_BD
   let tokenDayData = TokenDayData.load(tokenDayID)
   if (tokenDayData === null) {
     tokenDayData = new TokenDayData(tokenDayID)
     tokenDayData.date = dayStartTimestamp
     tokenDayData.token = token.id
-    tokenDayData.priceUSD = token.derivedETH.times(bundle.ethPrice)
+    tokenDayData.priceUSD = token.derivedSOL.times(bundle.solPrice)
     tokenDayData.dailyVolumeToken = ZERO_BD
-    tokenDayData.dailyVolumeETH = ZERO_BD
+    tokenDayData.dailyVolumeSOL = ZERO_BD
     tokenDayData.dailyVolumeUSD = ZERO_BD
     tokenDayData.dailyTxns = ZERO_BI
     tokenDayData.totalLiquidityUSD = ZERO_BD
   }
-  tokenDayData.priceUSD = token.derivedETH.times(bundle.ethPrice)
+  tokenDayData.priceUSD = token.derivedSOL.times(bundle.solPrice)
   tokenDayData.totalLiquidityToken = token.totalLiquidity
-  tokenDayData.totalLiquidityETH = token.totalLiquidity.times(token.derivedETH as BigDecimal)
-  tokenDayData.totalLiquidityUSD = tokenDayData.totalLiquidityETH.times(bundle.ethPrice)
+  tokenDayData.totalLiquiditySOL = token.totalLiquidity.times(token.derivedSOL as BigDecimal)
+  tokenDayData.totalLiquidityUSD = tokenDayData.totalLiquiditySOL.times(bundle.solPrice)
   tokenDayData.dailyTxns = tokenDayData.dailyTxns.plus(ONE_BI)
   tokenDayData.save()
 

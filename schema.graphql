@@ -7,17 +7,21 @@ type MoraswapFactory @entity {
 
   # total volume
   totalVolumeUSD: BigDecimal!
-  totalVolumeETH: BigDecimal!
+  totalVolumeSOL: BigDecimal!
 
   # untracked values - less confident USD scores
   untrackedVolumeUSD: BigDecimal!
 
   # total liquidity
   totalLiquidityUSD: BigDecimal!
-  totalLiquidityETH: BigDecimal!
+  totalLiquiditySOL: BigDecimal!
 
   # transactions
   txCount: BigInt!
+
+  # indexing status
+  indexedBlock: BigInt!
+  indexedTimestamp: BigInt!
 }
 
 type Token @entity {
@@ -44,7 +48,7 @@ type Token @entity {
   totalLiquidity: BigDecimal!
 
   # derived prices
-  derivedETH: BigDecimal
+  derivedSOL: BigDecimal
 
   # derived fields
   tokenDayData: [TokenDayData!]! @derivedFrom(field: "token")
@@ -66,10 +70,10 @@ type Pair @entity {
   totalSupply: BigDecimal!
 
   # derived liquidity
-  reserveETH: BigDecimal!
+  reserveSOL: BigDecimal!
   reserveUSD: BigDecimal!
   # used for separating per pair reserves and global
-  trackedReserveETH: BigDecimal!
+  trackedReserveSOL: BigDecimal!
 
   # Price in terms of the asset pair
   token0Price: BigDecimal!
@@ -181,7 +185,7 @@ type Burn @entity {
   # derived amount based on available prices of tokens
   amountUSD: BigDecimal
 
-  # mark uncomplete in ETH case
+  # mark uncomplete in SOL case
   needsComplete: Boolean!
 
   # optional fee fields, if a Transfer event is fired in _mintFee
@@ -213,7 +217,7 @@ type Swap @entity {
 # stores for USD calculations
 type Bundle @entity {
   id: ID!
-  ethPrice: BigDecimal! # price of ETH usd
+  solPrice: BigDecimal! # price of SOL usd
 }
 
 # Data accumulated and condensed into day stats for all of Moraswap
@@ -221,12 +225,12 @@ type MoraswapDayData @entity {
   id: ID! # timestamp rounded to current day by dividing by 86400
   date: Int!
 
-  dailyVolumeETH: BigDecimal!
+  dailyVolumeSOL: BigDecimal!
   dailyVolumeUSD: BigDecimal!
   dailyVolumeUntracked: BigDecimal!
 
-  totalVolumeETH: BigDecimal!
-  totalLiquidityETH: BigDecimal!
+  totalVolumeSOL: BigDecimal!
+  totalLiquiditySOL: BigDecimal!
   totalVolumeUSD: BigDecimal! # Accumulate at each trade, not just calculated off whatever totalVolume is. making it more accurate as it is a live conversion
   totalLiquidityUSD: BigDecimal!
 
@@ -287,13 +291,13 @@ type TokenDayData @entity {
 
   # volume stats
   dailyVolumeToken: BigDecimal!
-  dailyVolumeETH: BigDecimal!
+  dailyVolumeSOL: BigDecimal!
   dailyVolumeUSD: BigDecimal!
   dailyTxns: BigInt!
 
   # liquidity stats
   totalLiquidityToken: BigDecimal!
-  totalLiquidityETH: BigDecimal!
+  totalLiquiditySOL: BigDecimal!
   totalLiquidityUSD: BigDecimal!
 
   # price stats

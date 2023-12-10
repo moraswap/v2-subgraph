@@ -8,6 +8,6 @@ export const USDT_ADDRESS = '{{usdt_address}}' // USDT
 export const WBTC_ADDRESS = '{{wbtc_address}}' // WBTC
 export const WSOL_ADDRESS = '{{wsol_address}}' // WSOL
 
-export const USDC_WETH9_PAIR = '{{usdc_weth9_pair_address}}' // created at block {{usdc_weth9_pair_create_block}}
-export const DAI_WETH9_PAIR = '{{dai_weth9_pair_address}}' // created block {{dai_weth9_pair_create_block}}
-export const USDT_WETH9_PAIR = '{{usdt_weth9_pair_address}}' // created block {{usdt_weth9_pair_create_block}}
+export const USDC_WSOL_PAIR = '{{usdc_wsol_pair_address}}' // created at block {{usdc_wsol_pair_create_block}}
+export const DAI_WSOL_PAIR = '{{dai_wsol_pair_address}}' // created block {{dai_wsol_pair_create_block}}
+export const USDT_WSOL_PAIR = '{{usdt_wsol_pair_address}}' // created block {{usdt_wsol_pair_create_block}}

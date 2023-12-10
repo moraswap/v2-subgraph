@@ -22,7 +22,7 @@ Below are a few ways to show how to query the moraswap-subgraph for data. The qu
 
 #### MoraswapFactory
 
-Contains data across all of Moraswap V2. This entity tracks important things like total liquidity (in ETH and USD, see below), all time volume, transaction count, number of pairs and more.
+Contains data across all of Moraswap V2. This entity tracks important things like total liquidity (in SOL and USD, see below), all time volume, transaction count, number of pairs and more.
 
 #### Token
 

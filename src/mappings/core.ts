@@ -8,11 +8,12 @@ import {
   Mint as MintEvent,
   Burn as BurnEvent,
   Swap as SwapEvent,
-  Bundle
+  Bundle,
+  LiquidityPosition
 } from '../types/schema'
 import { Pair as PairContract, Mint, Burn, Swap, Transfer, Sync } from '../types/templates/Pair/Pair'
 import { updatePairDayData, updateTokenDayData, updateMoraswapDayData, updatePairHourData } from './dayUpdates'
-import { getEthPriceInUSD, findEthPerToken, getTrackedVolumeUSD, getTrackedLiquidityUSD } from './pricing'
+import { getSolPriceInUSD, findSolPerToken, getTrackedVolumeUSD, getTrackedLiquidityUSD } from './pricing'
 import {
   convertTokenToDecimal,
   ONE_BI,
@@ -93,7 +94,7 @@ export function handleTransfer(event: Transfer): void {
     }
   }
 
-  // case where direct send first on ETH withdrawls
+  // case where direct send first on SOL withdrawls
   if (event.params.to.toHexString() == pair.id) {
     let burns = transaction.burns
     let burn = new BurnEvent(
@@ -196,14 +197,14 @@ export function handleTransfer(event: Transfer): void {
     let fromUserLiquidityPosition = createLiquidityPosition(event.address, from)
     fromUserLiquidityPosition.liquidityTokenBalance = convertTokenToDecimal(pairContract.balanceOf(from), BI_18)
     fromUserLiquidityPosition.save()
-    createLiquiditySnapshot(fromUserLiquidityPosition, event)
+    createLiquiditySnapshot(fromUserLiquidityPosition as LiquidityPosition, event)
   }
 
   if (event.params.to.toHexString() != ADDRESS_ZERO && to.toHexString() != pair.id) {
     let toUserLiquidityPosition = createLiquidityPosition(event.address, to)
     toUserLiquidityPosition.liquidityTokenBalance = convertTokenToDecimal(pairContract.balanceOf(to), BI_18)
     toUserLiquidityPosition.save()
-    createLiquiditySnapshot(toUserLiquidityPosition, event)
+    createLiquiditySnapshot(toUserLiquidityPosition as LiquidityPosition, event)
   }
 
   transaction.save()
@@ -216,7 +217,7 @@ export function handleSync(event: Sync): void {
   let moraswap = MoraswapFactory.load(FACTORY_ADDRESS)
 
   // reset factory liquidity by subtracting onluy tarcked liquidity
-  moraswap.totalLiquidityETH = moraswap.totalLiquidityETH.minus(pair.trackedReserveETH as BigDecimal)
+  moraswap.totalLiquiditySOL = moraswap.totalLiquiditySOL.minus(pair.trackedReserveSOL as BigDecimal)
 
   // reset token total liquidity amounts
   token0.totalLiquidity = token0.totalLiquidity.minus(pair.reserve0)
@@ -232,36 +233,36 @@ export function handleSync(event: Sync): void {
 
   pair.save()
 
-  // update ETH price now that reserves could have changed
+  // update SOL price now that reserves could have changed
   let bundle = Bundle.load('1')
-  bundle.ethPrice = getEthPriceInUSD()
+  bundle.solPrice = getSolPriceInUSD()
   bundle.save()
 
-  token0.derivedETH = findEthPerToken(token0 as Token)
-  token1.derivedETH = findEthPerToken(token1 as Token)
+  token0.derivedSOL = findSolPerToken(token0 as Token)
+  token1.derivedSOL = findSolPerToken(token1 as Token)
   token0.save()
   token1.save()
 
   // get tracked liquidity - will be 0 if neither is in whitelist
-  let trackedLiquidityETH: BigDecimal
-  if (bundle.ethPrice.notEqual(ZERO_BD)) {
-    trackedLiquidityETH = getTrackedLiquidityUSD(pair.reserve0, token0 as Token, pair.reserve1, token1 as Token).div(
-      bundle.ethPrice
+  let trackedLiquiditySOL: BigDecimal
+  if (bundle.solPrice.notEqual(ZERO_BD)) {
+    trackedLiquiditySOL = getTrackedLiquidityUSD(pair.reserve0, token0 as Token, pair.reserve1, token1 as Token).div(
+      bundle.solPrice
     )
   } else {
-    trackedLiquidityETH = ZERO_BD
+    trackedLiquiditySOL = ZERO_BD
   }
 
   // use derived amounts within pair
-  pair.trackedReserveETH = trackedLiquidityETH
-  pair.reserveETH = pair.reserve0
-    .times(token0.derivedETH as BigDecimal)
-    .plus(pair.reserve1.times(token1.derivedETH as BigDecimal))
-  pair.reserveUSD = pair.reserveETH.times(bundle.ethPrice)
+  pair.trackedReserveSOL = trackedLiquiditySOL
+  pair.reserveSOL = pair.reserve0
+    .times(token0.derivedSOL as BigDecimal)
+    .plus(pair.reserve1.times(token1.derivedSOL as BigDecimal))
+  pair.reserveUSD = pair.reserveSOL.times(bundle.solPrice)
 
   // use tracked amounts globally
-  moraswap.totalLiquidityETH = moraswap.totalLiquidityETH.plus(trackedLiquidityETH)
-  moraswap.totalLiquidityUSD = moraswap.totalLiquidityETH.times(bundle.ethPrice)
+  moraswap.totalLiquiditySOL = moraswap.totalLiquiditySOL.plus(trackedLiquiditySOL)
+  moraswap.totalLiquidityUSD = moraswap.totalLiquiditySOL.times(bundle.solPrice)
 
   // now correctly set liquidity amounts for each token
   token0.totalLiquidity = token0.totalLiquidity.plus(pair.reserve0)
@@ -277,7 +278,8 @@ export function handleSync(event: Sync): void {
 export function handleMint(event: Mint): void {
   let transaction = Transaction.load(event.transaction.hash.toHexString())
   let mints = transaction.mints
-  let mint = MintEvent.load(mints[mints.length - 1])
+  let lastMint = mints[mints.length - 1]
+  let mint = MintEvent.load(lastMint)
 
   let pair = Pair.load(event.address.toHex())
   let moraswap = MoraswapFactory.load(FACTORY_ADDRESS)
@@ -293,12 +295,14 @@ export function handleMint(event: Mint): void {
   token0.txCount = token0.txCount.plus(ONE_BI)
   token1.txCount = token1.txCount.plus(ONE_BI)
 
-  // get new amounts of USD and ETH for tracking
+  // get new amounts of USD and SOL for tracking
   let bundle = Bundle.load('1')
-  let amountTotalUSD = token1.derivedETH
+  // let derivedSOL0 = token0.derivedSOL || ZERO_BD
+  // let derivedSOL1 = token1.derivedSOL || ZERO_BD
+  let amountTotalUSD = token1.derivedSOL
     .times(token1Amount)
-    .plus(token0.derivedETH.times(token0Amount))
-    .times(bundle.ethPrice)
+    .plus(token0.derivedSOL.times(token0Amount))
+    .times(bundle.solPrice)
 
   // update txn counts
   pair.txCount = pair.txCount.plus(ONE_BI)
@@ -319,7 +323,7 @@ export function handleMint(event: Mint): void {
 
   // update the LP position
   let liquidityPosition = createLiquidityPosition(event.address, mint.to as Address)
-  createLiquiditySnapshot(liquidityPosition, event)
+  createLiquiditySnapshot(liquidityPosition as LiquidityPosition, event)
 
   // update day entities
   updatePairDayData(event)
@@ -353,12 +357,14 @@ export function handleBurn(event: Burn): void {
   token0.txCount = token0.txCount.plus(ONE_BI)
   token1.txCount = token1.txCount.plus(ONE_BI)
 
-  // get new amounts of USD and ETH for tracking
+  // get new amounts of USD and SOL for tracking
   let bundle = Bundle.load('1')
-  let amountTotalUSD = token1.derivedETH
+  // let derivedSOL0 = token0.derivedSOL || ZERO_BD
+  // let derivedSOL1 = token1.derivedSOL || ZERO_BD
+  let amountTotalUSD = token1.derivedSOL
     .times(token1Amount)
-    .plus(token0.derivedETH.times(token0Amount))
-    .times(bundle.ethPrice)
+    .plus(token0.derivedSOL.times(token0Amount))
+    .times(bundle.solPrice)
 
   // update txn counts
   moraswap.txCount = moraswap.txCount.plus(ONE_BI)
@@ -381,7 +387,7 @@ export function handleBurn(event: Burn): void {
 
   // update the LP position
   let liquidityPosition = createLiquidityPosition(event.address, burn.sender as Address)
-  createLiquiditySnapshot(liquidityPosition, event)
+  createLiquiditySnapshot(liquidityPosition as LiquidityPosition, event)
 
   // update day entities
   updatePairDayData(event)
@@ -404,24 +410,26 @@ export function handleSwap(event: Swap): void {
   let amount0Total = amount0Out.plus(amount0In)
   let amount1Total = amount1Out.plus(amount1In)
 
-  // ETH/USD prices
+  // SOL/USD prices
   let bundle = Bundle.load('1')
 
-  // get total amounts of derived USD and ETH for tracking
-  let derivedAmountETH = token1.derivedETH
+  // get total amounts of derived USD and SOL for tracking
+  // let derivedSOL0 = token0.derivedSOL || ZERO_BD
+  // let derivedSOL1 = token1.derivedSOL || ZERO_BD
+  let derivedAmountSOL = token1.derivedSOL
     .times(amount1Total)
-    .plus(token0.derivedETH.times(amount0Total))
+    .plus(token0.derivedSOL.times(amount0Total))
     .div(BigDecimal.fromString('2'))
-  let derivedAmountUSD = derivedAmountETH.times(bundle.ethPrice)
+  let derivedAmountUSD = derivedAmountSOL.times(bundle.solPrice)
 
   // only accounts for volume through white listed tokens
   let trackedAmountUSD = getTrackedVolumeUSD(amount0Total, token0 as Token, amount1Total, token1 as Token, pair as Pair)
 
-  let trackedAmountETH: BigDecimal
-  if (bundle.ethPrice.equals(ZERO_BD)) {
-    trackedAmountETH = ZERO_BD
+  let trackedAmountSOL: BigDecimal
+  if (bundle.solPrice.equals(ZERO_BD)) {
+    trackedAmountSOL = ZERO_BD
   } else {
-    trackedAmountETH = trackedAmountUSD.div(bundle.ethPrice)
+    trackedAmountSOL = trackedAmountUSD.div(bundle.solPrice)
   }
 
   // update token0 global volume and token liquidity stats
@@ -449,7 +457,7 @@ export function handleSwap(event: Swap): void {
   // update global values, only used tracked amounts for volume
   let moraswap = MoraswapFactory.load(FACTORY_ADDRESS)
   moraswap.totalVolumeUSD = moraswap.totalVolumeUSD.plus(trackedAmountUSD)
-  moraswap.totalVolumeETH = moraswap.totalVolumeETH.plus(trackedAmountETH)
+  moraswap.totalVolumeSOL = moraswap.totalVolumeSOL.plus(trackedAmountSOL)
   moraswap.untrackedVolumeUSD = moraswap.untrackedVolumeUSD.plus(derivedAmountUSD)
   moraswap.txCount = moraswap.txCount.plus(ONE_BI)
 
@@ -510,7 +518,7 @@ export function handleSwap(event: Swap): void {
 
   // swap specific updating
   moraswapDayData.dailyVolumeUSD = moraswapDayData.dailyVolumeUSD.plus(trackedAmountUSD)
-  moraswapDayData.dailyVolumeETH = moraswapDayData.dailyVolumeETH.plus(trackedAmountETH)
+  moraswapDayData.dailyVolumeSOL = moraswapDayData.dailyVolumeSOL.plus(trackedAmountSOL)
   moraswapDayData.dailyVolumeUntracked = moraswapDayData.dailyVolumeUntracked.plus(derivedAmountUSD)
   moraswapDayData.save()
 
@@ -528,17 +536,17 @@ export function handleSwap(event: Swap): void {
 
   // swap specific updating for token0
   token0DayData.dailyVolumeToken = token0DayData.dailyVolumeToken.plus(amount0Total)
-  token0DayData.dailyVolumeETH = token0DayData.dailyVolumeETH.plus(amount0Total.times(token0.derivedETH as BigDecimal))
+  token0DayData.dailyVolumeSOL = token0DayData.dailyVolumeSOL.plus(amount0Total.times(token0.derivedSOL as BigDecimal))
   token0DayData.dailyVolumeUSD = token0DayData.dailyVolumeUSD.plus(
-    amount0Total.times(token0.derivedETH as BigDecimal).times(bundle.ethPrice)
+    amount0Total.times(token0.derivedSOL as BigDecimal).times(bundle.solPrice)
   )
   token0DayData.save()
 
   // swap specific updating
   token1DayData.dailyVolumeToken = token1DayData.dailyVolumeToken.plus(amount1Total)
-  token1DayData.dailyVolumeETH = token1DayData.dailyVolumeETH.plus(amount1Total.times(token1.derivedETH as BigDecimal))
+  token1DayData.dailyVolumeSOL = token1DayData.dailyVolumeSOL.plus(amount1Total.times(token1.derivedSOL as BigDecimal))
   token1DayData.dailyVolumeUSD = token1DayData.dailyVolumeUSD.plus(
-    amount1Total.times(token1.derivedETH as BigDecimal).times(bundle.ethPrice)
+    amount1Total.times(token1.derivedSOL as BigDecimal).times(bundle.solPrice)
   )
   token1DayData.save()
 }

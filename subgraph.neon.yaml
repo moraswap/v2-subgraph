@@ -6,11 +6,11 @@ schema:
 dataSources:
   - kind: ethereum/contract
     name: Factory
-    network: neon
+    network: neonlabs
     source:
-      address: '0xd43F135f6667174f695ecB7DD2B5f953d161e4d1'
+      address: '0xd43f135f6667174f695ecb7dd2b5f953d161e4d1'
       abi: Factory
-      startBlock: 200833842
+      startBlock: 202300000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.3
@@ -31,10 +31,12 @@ dataSources:
       eventHandlers:
         - event: PairCreated(indexed address,indexed address,address,uint256)
           handler: handleNewPair
+      blockHandlers:
+        - handler: handleBlock
 templates:
   - kind: ethereum/contract
     name: Pair
-    network: neon
+    network: neonlabs
     source:
       abi: Pair
     mapping:
